@@ -1,0 +1,64 @@
+https://www.sqlai.ai/app/optimize-sql  --- sql ai
+
+yugank2025@outlook.com
+
+postgresql2025--password rds –console RDS
+
+
+509399637868
+
+
+
+
+
+Step 1: Create a Blocking Transaction
+In the first session, start a transaction and acquire an advisory lock:
+
+SQL
+
+BEGIN;
+
+-- Acquire an exclusive advisory lock
+SELECT pg_advisory_lock(1);
+
+-- Simulate a long-running transaction
+SELECT pg_sleep(300);  -- Sleep for 5 minutes
+
+-- Keep the transaction open
+-- COMMIT or ROLLBACK will release the lock
+AI-generated code. Review and use carefully. More info on FAQ.
+Step 2: Create a Blocked Transaction
+In the second session, try to acquire the same advisory lock or perform an operation that will be blocked by the first transaction:
+
+SQL
+
+BEGIN;
+
+-- This will wait until the lock is released in the first session
+SELECT pg_advisory_lock(1);
+
+-- Your query
+SELECT * FROM sometesttable;
+
+-- Commit or rollback the transaction
+COMMIT;
+AI-generated code. Review and use carefully. More info on FAQ.
+Step 3: Observe the Blocking
+You can use the pg_stat_activity view to observe the blocking:
+
+SQL
+
+SELECT 
+    pid,
+    usename,
+    state,
+    wait_event_type,
+    wait_event,
+    query
+FROM pg_stat_activity
+WHERE wait_event IS NOT NULL;
+AI-generated code. Review and use carefully. More info on FAQ.
+This setup will help you create and observe blocking processes in PostgreSQL. Let me know if you need any further assistance!
+
+
+
