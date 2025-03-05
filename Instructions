@@ -1,0 +1,23 @@
+DEMO: Create and Analyze a Blocking Transaction
+Follow these steps to create a blocking transaction and analyze it using SQLAI.ai:
+Step 1: Create a Blocking Transaction
+Initiate a transaction in the first PostgreSQL session and acquire an advisory lock to simulate a long-running operation. 
+This transaction will be kept open to hold the lock.
+
+Step 2: Create a Blocked Transaction
+In a second PostgreSQL session, attempt to acquire the same advisory lock, which will cause this transaction to block. 
+This transaction will wait until the lock is released in the first session.
+
+Step 3: Observe the Blocking
+Use the pg_stat_activity view to observe the blocking. This view provides real-time information about PostgreSQL server activity, 
+showing which queries are waiting and which are holding locks.
+This setup will help you create and observe blocking processes in PostgreSQL.
+Analyze with SQLAI.ai:
+Go to Generate SQL Query to check for database blocking.
+Check for database blocking using the generated query.
+Run the generated query in your database.
+Identify the query causing the issue using the pid and query_duration.
+Use "Explain Query" to understand the query execution plan.
+Optimize the query using the "Optimize SQL Query" option to reduce blocking.
+
+
