@@ -1,0 +1,80 @@
+Certainly! Let’s use a more realistic scenario where advisory locks could be helpful. For example, let's imagine you are working with a system where you are updating records in a `users` table, and you want to ensure that a specific user record is updated exclusively by one transaction at a time. This way, no other transaction can update the same user record simultaneously, avoiding potential conflicts.
+
+### Step 1: Create a Blocking Transaction
+
+Let's simulate a scenario where a long-running transaction acquires a lock on a specific user and prevents any other transactions from modifying that user until it is finished.
+
+```sql
+BEGIN;
+
+-- Acquire an exclusive advisory lock for the user with ID = 1
+-- (This will lock access to this user record for any other session trying to acquire the same lock)
+SELECT pg_advisory_lock(123);  -- Using 123 as the advisory lock ID (can be based on the user's ID)
+
+-- Simulate a long-running process, such as a data analysis or report generation
+SELECT pg_sleep(180);  -- Sleep for 3 minutes to simulate long processing
+
+-- Keep the transaction open (The lock is held for as long as this transaction is open)
+-- COMMIT or ROLLBACK will release the lock
+```
+
+In this example, the transaction locks a specific resource (a user with ID = 1) by acquiring an advisory lock (`pg_advisory_lock(123)`). The lock prevents other transactions from modifying or interacting with this user until this transaction is committed or rolled back.
+
+### Step 2: Create a Blocked Transaction
+
+Now, in the second session, we try to acquire the same advisory lock on the user with ID = 1, but since the first transaction already holds the lock, the second session will be blocked until the first transaction releases the lock.
+
+```sql
+BEGIN;
+
+-- This will block until the first session releases the lock
+SELECT pg_advisory_lock(123);  -- Trying to acquire the same lock on user ID = 1
+
+-- Perform some action (e.g., update the user record)
+UPDATE users
+SET email = 'newemail@example.com'
+WHERE user_id = 1;
+
+-- Commit the transaction (the lock will be released at this point)
+COMMIT;
+```
+
+This transaction is blocked because it cannot acquire the advisory lock until the first session releases it. Once the first session is done and the transaction is committed or rolled back, the second session can acquire the lock and proceed with the `UPDATE`.
+
+### Step 3: Observe the Blocking
+
+To observe the blocking and understand which session is holding the lock and which session is waiting, we can use the `pg_stat_activity` view.
+
+```sql
+SELECT 
+    pid, 
+    usename, 
+    state, 
+    wait_event_type, 
+    wait_event, 
+    query
+FROM pg_stat_activity
+WHERE wait_event IS NOT NULL;
+```
+
+This query will return information about sessions that are currently blocked by a wait event. If you are watching this during the blocking scenario, you should see something like this:
+
+- **`pid`**: The process ID of the session (which helps identify the sessions involved).
+- **`usename`**: The username of the session (to see which user is holding or waiting for the lock).
+- **`state`**: The current state of the session (e.g., `waiting` for the lock).
+- **`wait_event_type`** and **`wait_event`**: These will indicate that the session is waiting for an advisory lock.
+- **`query`**: The query that the session is attempting to execute (e.g., `UPDATE users SET ...`).
+
+In this case, the second session will appear in a `waiting` state, showing that it's waiting for the lock held by the first session.
+
+### Example Scenario Recap
+
+- **Step 1**: The first session starts and locks the user record (ID = 1), simulating a long-running operation (e.g., data processing).
+- **Step 2**: The second session tries to acquire the same lock and is blocked because the first session holds the lock.
+- **Step 3**: By querying `pg_stat_activity`, you can observe that the second session is blocked and waiting for the first session to release the lock.
+
+### Conclusion
+
+This is a more practical and medium-level example where advisory locks are used to prevent concurrent modification of a single resource (a user in this case). It helps demonstrate how blocking transactions can occur when multiple sessions try to access the same resource, and it shows how you can observe the blocking state.
+
+Let me know if you need further adjustments or explanations!
